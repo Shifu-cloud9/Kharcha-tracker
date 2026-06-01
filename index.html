@@ -372,6 +372,15 @@ function renderDailyView(){
       <div class="sc s-rep"><span class="amt">${fmt(entry.rep)}</span><span class="lbl">⛽ Repairs</span></div>
     </div>
     ${entry.note?`<div class="card" style="padding:10px 16px;background:var(--yellow)"><span style="font-size:0.78rem;font-weight:800;color:var(--yellow-dark)">📌 Note: </span><span style="font-size:0.85rem;font-weight:600;color:#5A4800">${entry.note}</span></div>`:''}
+    <div class="card">
+  <div class="card-title">📅 Select Month For Pie Chart</div>
+
+  <select id="month-pie-selector" onchange="renderMonthlyView()">
+    ${mKeys.map(mk =>
+      `<option value="${mk}">${mk}</option>`
+    ).join('')}
+  </select>
+</div>
     <div class="chart-row">
       <div class="chart-box"><h3>📈 7-day trend</h3><div style="position:relative;height:180px"><canvas id="d-line" role="img" aria-label="7 day trend">7 day spending</canvas></div></div>
       <div class="chart-box"><h3>🍩 distribution</h3><div style="position:relative;height:180px"><canvas id="d-donut" role="img" aria-label="Category breakdown">Distribution</canvas></div></div>
@@ -504,7 +513,7 @@ function renderMonthlyView(){
     </div>
     <div class="chart-row">
       <div class="chart-box"><h3>📈 monthly trend</h3><div style="position:relative;height:200px"><canvas id="m-line" role="img" aria-label="Monthly trend">Monthly totals</canvas></div></div>
-      <div class="chart-box"><h3>🍩 latest month</h3><div style="position:relative;height:200px"><canvas id="m-donut" role="img" aria-label="Category distribution">Distribution</canvas></div></div>
+      <div class="chart-box"><h3 id="pie-title">🍩 selected month</h3><div style="position:relative;height:200px"><canvas id="m-donut" role="img" aria-label="Category distribution">Distribution</canvas></div></div>
     </div>
     ${mKeys.map((mk,i)=>{
       const mes=months[mk];
@@ -544,15 +553,26 @@ function renderMonthlyView(){
       ]},
       options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:10}}},scales:{x:{ticks:{font:{size:10},color:'#9B85A8'}},y:{ticks:{font:{size:10},color:'#9B85A8'},beginAtZero:true}}}
     });
-    const curMes=months[mKeys[0]]||[];
+    const selectedMonth =
+  document.getElementById('month-pie-selector')?.value
+  || mKeys[0];
+
+const curMes = months[selectedMonth] || [];
     const cats={groc:0,snack:0,shop:0,rep:0};
     curMes.forEach(e=>CAT_KEYS.forEach(k=>{cats[k]+=e[k]||0}));
-    const f=getFixed(mKeys[0]);
-    const donutData=[...CAT_KEYS.map(k=>cats[k]),...M_KEYS.map(k=>f[k]||0)];
+    const f=getFixed(selectedMonth);
+    const donutData = CAT_KEYS.map(k => cats[k]);
     if(donutData.some(v=>v>0)){
-      charts.mDonut=new Chart(document.getElementById('m-donut'),{
+      document.getElementById('pie-title').textContent =
+  `🍩 ${selectedMonth} distribution`;
+        charts.mDonut=new Chart(document.getElementById('m-donut'),{
         type:'doughnut',
-        data:{labels:[...CAT_KEYS.map(k=>CAT_NAMES[k]),...M_KEYS.map(k=>M_NAMES[k])],datasets:[{data:donutData,backgroundColor:['#A8E6CF','#FFB7D5','#C9B8FF','#FFD4B2','#FFF2A8','#D4F0FF','#FFE4CC','#E8D5FF'],borderWidth:0}]},
+        data:{labels:CAT_KEYS.map(k=>CAT_NAMES[k]),datasets:[{data:donutData,backgroundColor:[
+ '#A8E6CF',
+ '#FFB7D5',
+ '#C9B8FF',
+ '#FFD4B2'
+],borderWidth:0}]},
         options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:8},padding:4,boxWidth:8}}}}
       });
     }
