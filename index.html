@@ -268,9 +268,37 @@ function saveEntry(){
   const note=document.getElementById('i-note').value.trim();
   const daily=groc+snack+shop+rep;
   if(daily===0){showToast('Enter at least one amount!');return}
-  const idx=entries.findIndex(e=>e.date===date);
-  const entry={date,groc,snack,shop,rep,daily,note};
-  if(idx>=0)entries[idx]=entry;else entries.push(entry);
+const idx = entries.findIndex(e => e.date === date);
+
+if (idx >= 0) {
+  entries[idx].groc += groc;
+  entries[idx].snack += snack;
+  entries[idx].shop += shop;
+  entries[idx].rep += rep;
+
+  entries[idx].daily =
+    entries[idx].groc +
+    entries[idx].snack +
+    entries[idx].shop +
+    entries[idx].rep;
+
+  if (note) {
+    entries[idx].note =
+      entries[idx].note
+        ? entries[idx].note + " | " + note
+        : note;
+  }
+} else {
+  entries.push({
+    date,
+    groc,
+    snack,
+    shop,
+    rep,
+    daily,
+    note
+  });
+}
   entries.sort((a,b)=>a.date.localeCompare(b.date));
   localStorage.setItem('kharcha_entries',JSON.stringify(entries));
   ['i-groc','i-snack','i-shop','i-rep','i-note'].forEach(id=>{document.getElementById(id).value=''});
@@ -278,9 +306,22 @@ function saveEntry(){
 }
 
 function deleteEntry(date){
-  entries=entries.filter(e=>e.date!==date);
-  localStorage.setItem('kharcha_entries',JSON.stringify(entries));
-  renderDailyView();showToast('🗑 Deleted');
+
+  if(!confirm(`Delete all expenses for ${date}?`)){
+    return;
+  }
+
+  entries = entries.filter(e => e.date !== date);
+
+  localStorage.setItem(
+    'kharcha_entries',
+    JSON.stringify(entries)
+  );
+
+  renderDailyView();
+
+  showToast('🗑 Day deleted successfully');
+
 }
 
 function switchPage(id,btn){
