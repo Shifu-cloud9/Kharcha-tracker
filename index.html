@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -195,6 +194,12 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 
   <!-- MONTHLY VIEW -->
   <div class="page" id="page-mview">
+    <div class="card">
+      <div class="card-title">📅 Select Month For Pie Chart</div>
+      <div class="month-selector">
+        <select id="mv-month"></select>
+      </div>
+    </div>
     <div id="monthly-view-content"></div>
   </div>
 </div>
@@ -332,7 +337,7 @@ function switchPage(id,btn){
   Object.values(charts).forEach(c=>{try{c.destroy()}catch(e){}});charts={};
   if(id==='dview')renderDailyView();
   if(id==='wview')renderWeeklyView();
-  if(id==='mview')renderMonthlyView();
+  if(id==='mview'){populateMonthlySelector();renderMonthlyView();}
 }
 
 function showToast(msg){
@@ -407,10 +412,7 @@ function renderWeeklyView(){
     const wk=mon.toISOString().split('T')[0];
     if(!weeks[wk])weeks[wk]=[];weeks[wk].push(e);
   });
-  const wkKeys =
-  Object.keys(weeks)
-  .sort()
-  .reverse();
+  const wkKeys=Object.keys(weeks).sort().reverse().slice(0,4);
   // weekly totals = daily only (no proportional fixed in the line graph)
   const wTotals=wkKeys.map(wk=>weeks[wk].reduce((s,e)=>s+e.daily,0));
   // grand = daily + full fixed for each unique month in the week
@@ -435,24 +437,6 @@ function renderWeeklyView(){
     <div class="summary-grid">
       ${wkKeys.map((wk,i)=>`<div class="sc s-${['total','groc','snack','shop'][i%4]}"><span class="amt">${fmt(wTotals[i])}</span><span class="lbl">w/o ${wk.slice(5)}</span></div>`).join('')}
     </div>
-    <div class="card">
-  <div class="card-title">📅 Select Week</div>
-
-  <select id="week-selector">
-    ${wkKeys.map(w =>
-      `<option value="${w}">
-        ${w}
-      </option>`
-    ).join('')}
-  </select>
-
-  <button
-    class="btn-save"
-    style="margin-top:10px"
-    onclick="renderWeeklyView()">
-    View Week
-  </button>
-</div>
     <div class="chart-row">
       <div class="chart-box"><h3>📈 weekly daily totals</h3><div style="position:relative;height:180px"><canvas id="w-line" role="img" aria-label="Weekly daily spending trend">Weekly totals</canvas></div></div>
       <div class="chart-box"><h3>🍩 avg distribution</h3><div style="position:relative;height:180px"><canvas id="w-donut" role="img" aria-label="Category distribution">Distribution</canvas></div></div>
@@ -496,11 +480,7 @@ function renderWeeklyView(){
       },
       options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10},color:'#9B85A8'}},y:{ticks:{font:{size:10},color:'#9B85A8'},beginAtZero:true}}}
     });
-    const selectedWeek =
-  document.getElementById('week-selector')?.value
-  || wkKeys[0];
-
-const allE = weeks[selectedWeek] || [];
+    const allE=Object.values(weeks).flat();
     const avgCats=CAT_KEYS.map(k=>allE.reduce((s,e)=>s+(e[k]||0),0)/wkKeys.length);
     if(avgCats.some(v=>v>0)){
       charts.wDonut=new Chart(document.getElementById('w-donut'),{
@@ -512,12 +492,29 @@ const allE = weeks[selectedWeek] || [];
   },100);
 }
 
+
+function populateMonthlySelector(){
+  const sel=document.getElementById('mv-month');
+  if(!sel) return;
+  const months={};
+  entries.forEach(e=>{months[e.date.slice(0,7)]=true;});
+  const keys=Object.keys(months).sort().reverse();
+  sel.innerHTML='';
+  keys.forEach(mk=>{
+    const op=document.createElement('option');
+    op.value=mk;
+    op.textContent=mk;
+    sel.appendChild(op);
+  });
+  sel.onchange=renderMonthlyView;
+}
+
 function renderMonthlyView(){
   const el=document.getElementById('monthly-view-content');
   Object.values(charts).forEach(c=>{try{c.destroy()}catch(e){}});charts={};
   const months={};
   entries.forEach(e=>{const mk=e.date.slice(0,7);if(!months[mk])months[mk]=[];months[mk].push(e)});
-  const mKeys = Object.keys(months).sort().reverse();
+  const mKeys=Object.keys(months).sort().reverse();
   if(!mKeys.length){el.innerHTML=`<div class="card"><div class="empty-state"><span class="icon">🌙</span>No monthly data yet!</div></div>`;return}
   const mDailyTotals=mKeys.map(mk=>months[mk].reduce((s,e)=>s+e.daily,0));
   const mFixed=mKeys.map(mk=>fixedTotal(mk));
@@ -527,25 +524,9 @@ function renderMonthlyView(){
       <div><div class="g-label">🌟 latest month grand total</div><div style="font-size:0.75rem;color:var(--muted);font-weight:600;margin-top:2px">Daily: ${fmt(mDailyTotals[0]||0)} + Fixed: ${fmt(mFixed[0]||0)}</div></div>
       <div class="g-amt">${fmt(mGrands[0]||0)}</div>
     </div>
-    <div class="card">
-  <div class="card-title">📅 Select Month</div>
-
-  <select id="month-selector-monthly">
-    ${mKeys.map(mk =>
-      `<option value="${mk}">${mk}</option>`
-    ).join('')}
-  </select>
-
-  <button
-    class="btn-save"
-    style="margin-top:10px"
-    onclick="renderMonthlyView()">
-    View Month
-  </button>
-</div>
     <div class="chart-row">
       <div class="chart-box"><h3>📈 monthly trend</h3><div style="position:relative;height:200px"><canvas id="m-line" role="img" aria-label="Monthly trend">Monthly totals</canvas></div></div>
-      <div class="chart-box"><h3 id="pie-title">🍩 selected month</h3><div style="position:relative;height:200px"><canvas id="m-donut" role="img" aria-label="Category distribution">Distribution</canvas></div></div>
+      <div class="chart-box"><h3>🍩 latest month</h3><div style="position:relative;height:200px"><canvas id="m-donut" role="img" aria-label="Category distribution">Distribution</canvas></div></div>
     </div>
     ${mKeys.map((mk,i)=>{
       const mes=months[mk];
@@ -585,26 +566,16 @@ function renderMonthlyView(){
       ]},
       options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:10}}},scales:{x:{ticks:{font:{size:10},color:'#9B85A8'}},y:{ticks:{font:{size:10},color:'#9B85A8'},beginAtZero:true}}}
     });
-    const selectedMonth =
-  document.getElementById('month-selector-monthly')?.value
-  || mKeys[0];
-
-const curMes = months[selectedMonth] || [];
+    const selectedMonth=(document.getElementById('mv-month')?.value)||mKeys[0];
+    const curMes=months[selectedMonth]||[];
     const cats={groc:0,snack:0,shop:0,rep:0};
     curMes.forEach(e=>CAT_KEYS.forEach(k=>{cats[k]+=e[k]||0}));
     const f=getFixed(selectedMonth);
-    const donutData = CAT_KEYS.map(k => cats[k]);
+    const donutData=[...CAT_KEYS.map(k=>cats[k]),...M_KEYS.map(k=>f[k]||0)];
     if(donutData.some(v=>v>0)){
-      document.getElementById('pie-title').textContent =
-  `🍩 ${selectedMonth} distribution`;
-        charts.mDonut=new Chart(document.getElementById('m-donut'),{
+      charts.mDonut=new Chart(document.getElementById('m-donut'),{
         type:'doughnut',
-        data:{labels:CAT_KEYS.map(k=>CAT_NAMES[k]),datasets:[{data:donutData,backgroundColor:[
- '#A8E6CF',
- '#FFB7D5',
- '#C9B8FF',
- '#FFD4B2'
-],borderWidth:0}]},
+        data:{labels:[...CAT_KEYS.map(k=>CAT_NAMES[k]),...M_KEYS.map(k=>M_NAMES[k])],datasets:[{data:donutData,backgroundColor:['#A8E6CF','#FFB7D5','#C9B8FF','#FFD4B2','#FFF2A8','#D4F0FF','#FFE4CC','#E8D5FF'],borderWidth:0}]},
         options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:8},padding:4,boxWidth:8}}}}
       });
     }
