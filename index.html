@@ -372,15 +372,6 @@ function renderDailyView(){
       <div class="sc s-rep"><span class="amt">${fmt(entry.rep)}</span><span class="lbl">⛽ Repairs</span></div>
     </div>
     ${entry.note?`<div class="card" style="padding:10px 16px;background:var(--yellow)"><span style="font-size:0.78rem;font-weight:800;color:var(--yellow-dark)">📌 Note: </span><span style="font-size:0.85rem;font-weight:600;color:#5A4800">${entry.note}</span></div>`:''}
-    <div class="card">
-  <div class="card-title">📅 Select Month For Pie Chart</div>
-
-  <select id="month-pie-selector" onchange="renderMonthlyView()">
-    ${mKeys.map(mk =>
-      `<option value="${mk}">${mk}</option>`
-    ).join('')}
-  </select>
-</div>
     <div class="chart-row">
       <div class="chart-box"><h3>📈 7-day trend</h3><div style="position:relative;height:180px"><canvas id="d-line" role="img" aria-label="7 day trend">7 day spending</canvas></div></div>
       <div class="chart-box"><h3>🍩 distribution</h3><div style="position:relative;height:180px"><canvas id="d-donut" role="img" aria-label="Category breakdown">Distribution</canvas></div></div>
@@ -416,7 +407,10 @@ function renderWeeklyView(){
     const wk=mon.toISOString().split('T')[0];
     if(!weeks[wk])weeks[wk]=[];weeks[wk].push(e);
   });
-  const wkKeys=Object.keys(weeks).sort().reverse().slice(0,4);
+  const wkKeys =
+  Object.keys(weeks)
+  .sort()
+  .reverse();
   // weekly totals = daily only (no proportional fixed in the line graph)
   const wTotals=wkKeys.map(wk=>weeks[wk].reduce((s,e)=>s+e.daily,0));
   // grand = daily + full fixed for each unique month in the week
@@ -441,6 +435,24 @@ function renderWeeklyView(){
     <div class="summary-grid">
       ${wkKeys.map((wk,i)=>`<div class="sc s-${['total','groc','snack','shop'][i%4]}"><span class="amt">${fmt(wTotals[i])}</span><span class="lbl">w/o ${wk.slice(5)}</span></div>`).join('')}
     </div>
+    <div class="card">
+  <div class="card-title">📅 Select Week</div>
+
+  <select id="week-selector">
+    ${wkKeys.map(w =>
+      `<option value="${w}">
+        ${w}
+      </option>`
+    ).join('')}
+  </select>
+
+  <button
+    class="btn-save"
+    style="margin-top:10px"
+    onclick="renderWeeklyView()">
+    View Week
+  </button>
+</div>
     <div class="chart-row">
       <div class="chart-box"><h3>📈 weekly daily totals</h3><div style="position:relative;height:180px"><canvas id="w-line" role="img" aria-label="Weekly daily spending trend">Weekly totals</canvas></div></div>
       <div class="chart-box"><h3>🍩 avg distribution</h3><div style="position:relative;height:180px"><canvas id="w-donut" role="img" aria-label="Category distribution">Distribution</canvas></div></div>
@@ -484,7 +496,11 @@ function renderWeeklyView(){
       },
       options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10},color:'#9B85A8'}},y:{ticks:{font:{size:10},color:'#9B85A8'},beginAtZero:true}}}
     });
-    const allE=Object.values(weeks).flat();
+    const selectedWeek =
+  document.getElementById('week-selector')?.value
+  || wkKeys[0];
+
+const allE = weeks[selectedWeek] || [];
     const avgCats=CAT_KEYS.map(k=>allE.reduce((s,e)=>s+(e[k]||0),0)/wkKeys.length);
     if(avgCats.some(v=>v>0)){
       charts.wDonut=new Chart(document.getElementById('w-donut'),{
@@ -501,7 +517,7 @@ function renderMonthlyView(){
   Object.values(charts).forEach(c=>{try{c.destroy()}catch(e){}});charts={};
   const months={};
   entries.forEach(e=>{const mk=e.date.slice(0,7);if(!months[mk])months[mk]=[];months[mk].push(e)});
-  const mKeys=Object.keys(months).sort().reverse().slice(0,6);
+  const mKeys = Object.keys(months).sort().reverse();
   if(!mKeys.length){el.innerHTML=`<div class="card"><div class="empty-state"><span class="icon">🌙</span>No monthly data yet!</div></div>`;return}
   const mDailyTotals=mKeys.map(mk=>months[mk].reduce((s,e)=>s+e.daily,0));
   const mFixed=mKeys.map(mk=>fixedTotal(mk));
@@ -511,6 +527,22 @@ function renderMonthlyView(){
       <div><div class="g-label">🌟 latest month grand total</div><div style="font-size:0.75rem;color:var(--muted);font-weight:600;margin-top:2px">Daily: ${fmt(mDailyTotals[0]||0)} + Fixed: ${fmt(mFixed[0]||0)}</div></div>
       <div class="g-amt">${fmt(mGrands[0]||0)}</div>
     </div>
+    <div class="card">
+  <div class="card-title">📅 Select Month</div>
+
+  <select id="month-selector-monthly">
+    ${mKeys.map(mk =>
+      `<option value="${mk}">${mk}</option>`
+    ).join('')}
+  </select>
+
+  <button
+    class="btn-save"
+    style="margin-top:10px"
+    onclick="renderMonthlyView()">
+    View Month
+  </button>
+</div>
     <div class="chart-row">
       <div class="chart-box"><h3>📈 monthly trend</h3><div style="position:relative;height:200px"><canvas id="m-line" role="img" aria-label="Monthly trend">Monthly totals</canvas></div></div>
       <div class="chart-box"><h3 id="pie-title">🍩 selected month</h3><div style="position:relative;height:200px"><canvas id="m-donut" role="img" aria-label="Category distribution">Distribution</canvas></div></div>
@@ -554,7 +586,7 @@ function renderMonthlyView(){
       options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:10}}},scales:{x:{ticks:{font:{size:10},color:'#9B85A8'}},y:{ticks:{font:{size:10},color:'#9B85A8'},beginAtZero:true}}}
     });
     const selectedMonth =
-  document.getElementById('month-pie-selector')?.value
+  document.getElementById('month-selector-monthly')?.value
   || mKeys[0];
 
 const curMes = months[selectedMonth] || [];
