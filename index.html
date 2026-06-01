@@ -1,0 +1,510 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌸 Kharcha Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --pink:#FFB7D5;--pink-light:#FFE4F0;--pink-dark:#E8699A;
+  --lav:#C9B8FF;--lav-light:#EDE8FF;--lav-dark:#7C5CBF;
+  --mint:#A8E6CF;--mint-light:#D8F5EC;--mint-dark:#3DAA78;
+  --peach:#FFD4B2;--peach-light:#FFF0E6;--peach-dark:#E8934A;
+  --yellow:#FFF2A8;--yellow-dark:#C9A800;
+  --bg:#FFF6FB;--card:#FFFFFF;--text:#3D2B4A;--muted:#9B85A8;
+  --r:16px;--rs:10px;
+}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;background-image:radial-gradient(circle at 20% 20%,#FFE4F0 0%,transparent 40%),radial-gradient(circle at 80% 80%,#EDE8FF 0%,transparent 40%)}
+.app{max-width:780px;margin:0 auto;padding:1.5rem 1rem 4rem}
+.header{text-align:center;margin-bottom:1.5rem}
+.header h1{font-size:2rem;font-weight:900;color:var(--text)}
+.header h1 span{color:var(--pink-dark)}
+.header p{color:var(--muted);font-size:0.85rem;font-weight:600;margin-top:2px}
+.nav{display:flex;gap:8px;background:var(--card);border-radius:var(--r);padding:6px;box-shadow:0 2px 12px rgba(200,150,200,0.12);margin-bottom:1.5rem;flex-wrap:wrap}
+.nav-btn{flex:1;min-width:80px;padding:10px 8px;border:none;border-radius:var(--rs);background:transparent;color:var(--muted);font-family:'Nunito',sans-serif;font-weight:700;font-size:0.82rem;cursor:pointer;transition:all .2s;white-space:nowrap}
+.nav-btn.active{background:var(--lav-light);color:var(--lav-dark);box-shadow:0 2px 8px rgba(150,100,220,0.15)}
+.nav-btn:hover:not(.active){background:var(--pink-light);color:var(--pink-dark)}
+.page{display:none}.page.active{display:block}
+.card{background:var(--card);border-radius:var(--r);padding:1.25rem;box-shadow:0 2px 16px rgba(180,130,200,0.1);margin-bottom:1rem}
+.card-title{font-size:0.78rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:1rem}
+.date-row{display:flex;align-items:center;gap:8px;margin-bottom:1.2rem;flex-wrap:wrap}
+.date-row input[type=date],.date-row select{font-family:'Nunito',sans-serif;padding:8px 12px;border:2px solid var(--lav);border-radius:var(--rs);background:var(--lav-light);color:var(--lav-dark);font-weight:700;font-size:0.85rem;cursor:pointer;outline:none}
+.date-row input[type=date]:focus,.date-row select:focus{border-color:var(--lav-dark)}
+.date-label{font-size:0.82rem;font-weight:700;color:var(--muted)}
+.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0.5rem}
+.cat-item{border-radius:var(--rs);padding:12px}
+.cat-item label{font-size:0.78rem;font-weight:800;display:block;margin-bottom:6px}
+.cat-item.groceries{background:#D8F5EC}.cat-item.groceries label{color:#3DAA78}
+.cat-item.snacks{background:#FFE4F0}.cat-item.snacks label{color:#E8699A}
+.cat-item.shopping{background:#EDE8FF}.cat-item.shopping label{color:#7C5CBF}
+.cat-item.repairs{background:#FFF0E6}.cat-item.repairs label{color:#E8934A}
+.cat-item input[type=number]{width:100%;border:2px solid rgba(0,0,0,0.08);border-radius:8px;padding:8px 10px;font-family:'Nunito',sans-serif;font-weight:700;font-size:1rem;background:white;outline:none;transition:.2s}
+.cat-item.groceries input:focus{border-color:#3DAA78}
+.cat-item.snacks input:focus{border-color:#E8699A}
+.cat-item.shopping input:focus{border-color:#7C5CBF}
+.cat-item.repairs input:focus{border-color:#E8934A}
+.note-row{display:flex;gap:8px;margin-top:10px;align-items:center}
+.note-row input[type=text]{flex:1;border:2px solid var(--pink);border-radius:var(--rs);padding:8px 12px;font-family:'Nunito',sans-serif;font-weight:600;font-size:0.85rem;background:var(--pink-light);outline:none;color:var(--text)}
+.note-row input[type=text]::placeholder{color:var(--muted)}
+.note-row input[type=text]:focus{border-color:var(--pink-dark)}
+.btn-save{width:100%;margin-top:1rem;padding:14px;border:none;border-radius:var(--rs);background:linear-gradient(135deg,#FFB7D5,#C9B8FF);color:white;font-family:'Nunito',sans-serif;font-weight:800;font-size:1rem;cursor:pointer;letter-spacing:0.5px;transition:.2s;text-shadow:0 1px 2px rgba(0,0,0,0.15)}
+.btn-save:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(200,150,220,0.35)}
+.btn-save:active{transform:translateY(0)}
+.btn-del-red{background:linear-gradient(135deg,#FFB7D5,#FF8FAF)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--mint-dark);color:white;padding:10px 24px;border-radius:50px;font-weight:700;font-size:0.85rem;transition:.3s;z-index:999;opacity:0}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:1rem}
+.sc{border-radius:var(--rs);padding:14px 12px;text-align:center}
+.sc .amt{font-size:1.3rem;font-weight:900;display:block}
+.sc .lbl{font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;display:block;margin-top:2px}
+.s-total{background:var(--lav-light);color:var(--lav-dark)}
+.s-groc{background:var(--mint-light);color:var(--mint-dark)}
+.s-snack{background:var(--pink-light);color:var(--pink-dark)}
+.s-shop{background:var(--lav-light);color:var(--lav-dark)}
+.s-rep{background:var(--peach-light);color:var(--peach-dark)}
+.s-fixed{background:var(--yellow);color:var(--yellow-dark)}
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem}
+.chart-box{background:var(--card);border-radius:var(--r);padding:1rem;box-shadow:0 2px 12px rgba(180,130,200,0.08)}
+.chart-box h3{font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:0.75rem}
+.log-table{width:100%;border-collapse:collapse;font-size:0.82rem}
+.log-table th{text-align:left;padding:8px 10px;color:var(--muted);font-weight:800;text-transform:uppercase;font-size:0.68rem;letter-spacing:0.8px;border-bottom:2px solid var(--lav-light)}
+.log-table td{padding:9px 10px;border-bottom:1px solid #F5EDF8;vertical-align:middle}
+.log-table tr:last-child td{border-bottom:none}
+.log-table tr:hover td{background:#FDF6FF}
+.log-table .total-row td{font-weight:900;background:var(--lav-light);color:var(--lav-dark)}
+.badge{display:inline-block;padding:3px 9px;border-radius:50px;font-size:0.68rem;font-weight:800}
+.b-groc{background:var(--mint-light);color:var(--mint-dark)}
+.b-snack{background:var(--pink-light);color:var(--pink-dark)}
+.b-shop{background:var(--lav-light);color:var(--lav-dark)}
+.b-rep{background:var(--peach-light);color:var(--peach-dark)}
+.b-fixed{background:var(--yellow);color:var(--yellow-dark)}
+.month-cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.month-item{background:var(--yellow);border-radius:var(--rs);padding:12px}
+.month-item label{font-size:0.78rem;font-weight:800;color:var(--yellow-dark);display:block;margin-bottom:6px}
+.month-item input[type=number]{width:100%;border:2px solid rgba(201,168,0,0.3);border-radius:8px;padding:8px 10px;font-family:'Nunito',sans-serif;font-weight:700;font-size:1rem;background:white;outline:none}
+.month-item input:focus{border-color:var(--yellow-dark)}
+.month-selector{display:flex;gap:8px;align-items:center;margin-bottom:1rem;flex-wrap:wrap}
+.month-selector select{font-family:'Nunito',sans-serif;padding:8px 12px;border:2px solid var(--yellow);border-radius:var(--rs);background:var(--yellow);color:var(--yellow-dark);font-weight:700;font-size:0.85rem;cursor:pointer;outline:none}
+.month-selector select:focus{border-color:var(--yellow-dark)}
+.empty-state{text-align:center;padding:2rem;color:var(--muted);font-weight:600;font-size:0.9rem}
+.empty-state .icon{font-size:2.5rem;display:block;margin-bottom:0.5rem}
+.week-label{font-size:0.78rem;font-weight:700;color:var(--lav-dark);background:var(--lav-light);padding:4px 10px;border-radius:50px;display:inline-block;margin:8px 0 4px}
+.grand-banner{background:linear-gradient(135deg,#EDE8FF,#FFE4F0);border-radius:var(--rs);padding:14px 18px;display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;border:2px solid var(--lav)}
+.grand-banner .g-label{font-size:0.78rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px}
+.grand-banner .g-amt{font-size:1.6rem;font-weight:900;color:var(--lav-dark)}
+.divider{height:1px;background:var(--lav-light);margin:10px 0}
+@media(max-width:500px){.cat-grid{grid-template-columns:1fr}.chart-row{grid-template-columns:1fr}.month-cat-grid{grid-template-columns:1fr}.summary-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<h2 style="position:absolute;left:-9999px">Expense Tracker</h2>
+<div class="app">
+  <div class="header">
+    <h1>🌸 <span>Kharcha</span> Tracker</h1>
+    <p>your cute little money diary ✨</p>
+  </div>
+  <div class="nav">
+    <button class="nav-btn active" onclick="switchPage('log',this)">📝 Log Daily</button>
+    <button class="nav-btn" onclick="switchPage('msetup',this)">🗓 Monthly Fixed</button>
+    <button class="nav-btn" onclick="switchPage('dview',this)">📅 Daily</button>
+    <button class="nav-btn" onclick="switchPage('wview',this)">📊 Weekly</button>
+    <button class="nav-btn" onclick="switchPage('mview',this)">🌙 Monthly</button>
+  </div>
+
+  <!-- LOG -->
+  <div class="page active" id="page-log">
+    <div class="card">
+      <div class="card-title">📋 log today's expenses</div>
+      <div class="date-row">
+        <span class="date-label">📅 Date</span>
+        <input type="date" id="entry-date">
+      </div>
+      <div class="cat-grid">
+        <div class="cat-item groceries"><label>🥦 Groceries / Veggies</label><input type="number" id="i-groc" placeholder="₹ 0" min="0"></div>
+        <div class="cat-item snacks"><label>🍕 Snacks / Party</label><input type="number" id="i-snack" placeholder="₹ 0" min="0"></div>
+        <div class="cat-item shopping"><label>🛍 Personal Shopping</label><input type="number" id="i-shop" placeholder="₹ 0" min="0"></div>
+        <div class="cat-item repairs"><label>⛽ Repairs / Petrol</label><input type="number" id="i-rep" placeholder="₹ 0" min="0"></div>
+      </div>
+      <div class="note-row">
+        <span style="font-size:0.82rem;font-weight:700;color:var(--muted)">📌</span>
+        <input type="text" id="i-note" placeholder="any note? (optional)">
+      </div>
+      <button class="btn-save" onclick="saveEntry()">💾 Save Entry</button>
+    </div>
+  </div>
+
+  <!-- MONTHLY FIXED SETUP -->
+  <div class="page" id="page-msetup">
+    <div class="card">
+      <div class="card-title">🗓 set monthly fixed expenses</div>
+      <p style="font-size:0.82rem;color:var(--muted);font-weight:600;margin-bottom:1rem">Each month/year gets its own fixed expenses. Pick a month to set or edit.</p>
+      <div class="month-selector">
+        <span class="date-label">📅 Month</span>
+        <select id="ms-month">
+          <option value="01">January</option><option value="02">February</option><option value="03">March</option>
+          <option value="04">April</option><option value="05">May</option><option value="06">June</option>
+          <option value="07">July</option><option value="08">August</option><option value="09">September</option>
+          <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+        </select>
+        <select id="ms-year"></select>
+        <button style="padding:8px 14px;border:2px solid var(--yellow);border-radius:var(--rs);background:var(--yellow);color:var(--yellow-dark);font-family:'Nunito',sans-serif;font-weight:700;font-size:0.82rem;cursor:pointer" onclick="loadMonthlyInputs()">Load</button>
+      </div>
+      <div class="month-cat-grid">
+        <div class="month-item"><label>🧹 House Help</label><input type="number" id="m-help" placeholder="₹ 0" min="0"></div>
+        <div class="month-item"><label>🚗 Car Cleaning</label><input type="number" id="m-car" placeholder="₹ 0" min="0"></div>
+        <div class="month-item"><label>🥛 Milk</label><input type="number" id="m-milk" placeholder="₹ 0" min="0"></div>
+        <div class="month-item"><label>📰 Newspaper</label><input type="number" id="m-paper" placeholder="₹ 0" min="0"></div>
+      </div>
+      <button class="btn-save" onclick="saveMonthly()">💾 Save for This Month</button>
+    </div>
+    <div id="monthly-saved-list"></div>
+  </div>
+
+  <!-- DAILY VIEW -->
+  <div class="page" id="page-dview">
+    <div class="card">
+      <div class="card-title">📅 pick a day to view</div>
+      <div class="date-row">
+        <span class="date-label">📅 Date</span>
+        <input type="date" id="view-date" onchange="renderDailyView()">
+      </div>
+    </div>
+    <div id="daily-view-content"></div>
+  </div>
+
+  <!-- WEEKLY VIEW -->
+  <div class="page" id="page-wview">
+    <div id="weekly-view-content"></div>
+  </div>
+
+  <!-- MONTHLY VIEW -->
+  <div class="page" id="page-mview">
+    <div id="monthly-view-content"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const CAT_KEYS=['groc','snack','shop','rep'];
+const CAT_NAMES={groc:'Groceries',snack:'Snacks',shop:'Shopping',rep:'Repairs/Petrol'};
+const CAT_BADGE={groc:'b-groc',snack:'b-snack',shop:'b-shop',rep:'b-rep'};
+const M_KEYS=['help','car','milk','paper'];
+const M_NAMES={help:'House Help',car:'Car Cleaning',milk:'Milk',paper:'Newspaper'};
+
+let entries=JSON.parse(localStorage.getItem('kharcha_entries')||'[]');
+let allMonthly=JSON.parse(localStorage.getItem('kharcha_monthly_v2')||'{}');
+let charts={};
+
+function today(){return new Date().toISOString().split('T')[0]}
+function fmt(n){return '₹'+Math.round(n).toLocaleString('en-IN')}
+function mkKey(mm,yyyy){return yyyy+'-'+mm}
+function getFixed(mk){return allMonthly[mk]||{help:0,car:0,milk:0,paper:0}}
+function fixedTotal(mk){const f=getFixed(mk);return M_KEYS.reduce((s,k)=>s+(f[k]||0),0)}
+
+const td=new Date();
+document.getElementById('entry-date').value=today();
+document.getElementById('view-date').value=today();
+
+// Year dropdown: 2000 to 2100
+const msMonth=document.getElementById('ms-month');
+const msYear=document.getElementById('ms-year');
+msMonth.value=String(td.getMonth()+1).padStart(2,'0');
+for(let y=2000;y<=2100;y++){
+  const o=document.createElement('option');
+  o.value=y;o.textContent=y;
+  if(y===td.getFullYear())o.selected=true;
+  msYear.appendChild(o);
+}
+
+function loadMonthlyInputs(){
+  const mk=mkKey(msMonth.value,msYear.value);
+  const f=getFixed(mk);
+  M_KEYS.forEach(k=>{document.getElementById('m-'+k).value=f[k]||''});
+  renderSavedList();
+}
+loadMonthlyInputs();
+
+function saveMonthly(){
+  const mk=mkKey(msMonth.value,msYear.value);
+  const obj={};
+  M_KEYS.forEach(k=>{obj[k]=parseFloat(document.getElementById('m-'+k).value)||0});
+  allMonthly[mk]=obj;
+  localStorage.setItem('kharcha_monthly_v2',JSON.stringify(allMonthly));
+  renderSavedList();
+  showToast('✅ Saved for '+msMonth.options[msMonth.selectedIndex].text+' '+msYear.value);
+}
+
+function renderSavedList(){
+  const el=document.getElementById('monthly-saved-list');
+  const keys=Object.keys(allMonthly).sort().reverse();
+  if(!keys.length){el.innerHTML='';return}
+  el.innerHTML=`<div class="card"><div class="card-title">📋 saved monthly setups</div><table class="log-table"><thead><tr><th>Month</th><th>House Help</th><th>Car</th><th>Milk</th><th>Paper</th><th>Total</th></tr></thead><tbody>${keys.map(mk=>{const f=allMonthly[mk];const t=M_KEYS.reduce((s,k)=>s+(f[k]||0),0);return`<tr><td style="font-weight:700">${mk}</td>${M_KEYS.map(k=>`<td>${f[k]?fmt(f[k]):'-'}</td>`).join('')}<td style="font-weight:800;color:var(--yellow-dark)">${fmt(t)}</td></tr>`}).join('')}</tbody></table></div>`;
+}
+renderSavedList();
+
+function saveEntry(){
+  const date=document.getElementById('entry-date').value;
+  if(!date){showToast('Pick a date!');return}
+  const groc=parseFloat(document.getElementById('i-groc').value)||0;
+  const snack=parseFloat(document.getElementById('i-snack').value)||0;
+  const shop=parseFloat(document.getElementById('i-shop').value)||0;
+  const rep=parseFloat(document.getElementById('i-rep').value)||0;
+  const note=document.getElementById('i-note').value.trim();
+  const daily=groc+snack+shop+rep;
+  if(daily===0){showToast('Enter at least one amount!');return}
+  const idx=entries.findIndex(e=>e.date===date);
+  const entry={date,groc,snack,shop,rep,daily,note};
+  if(idx>=0)entries[idx]=entry;else entries.push(entry);
+  entries.sort((a,b)=>a.date.localeCompare(b.date));
+  localStorage.setItem('kharcha_entries',JSON.stringify(entries));
+  ['i-groc','i-snack','i-shop','i-rep','i-note'].forEach(id=>{document.getElementById(id).value=''});
+  showToast('✅ Saved! Daily total: '+fmt(daily));
+}
+
+function deleteEntry(date){
+  entries=entries.filter(e=>e.date!==date);
+  localStorage.setItem('kharcha_entries',JSON.stringify(entries));
+  renderDailyView();showToast('🗑 Deleted');
+}
+
+function switchPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  btn.classList.add('active');
+  Object.values(charts).forEach(c=>{try{c.destroy()}catch(e){}});charts={};
+  if(id==='dview')renderDailyView();
+  if(id==='wview')renderWeeklyView();
+  if(id==='mview')renderMonthlyView();
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+function getLast7(fromDate){
+  const d=new Date(fromDate);const result=[];
+  for(let i=6;i>=0;i--){const nd=new Date(d);nd.setDate(d.getDate()-i);const ds=nd.toISOString().split('T')[0];const e=entries.find(x=>x.date===ds);result.push(e||{date:ds,groc:0,snack:0,shop:0,rep:0,daily:0})}
+  return result;
+}
+
+function renderDailyView(){
+  const date=document.getElementById('view-date').value;
+  const entry=entries.find(e=>e.date===date);
+  const el=document.getElementById('daily-view-content');
+  Object.values(charts).forEach(c=>{try{c.destroy()}catch(e){}});charts={};
+  if(!entry){el.innerHTML=`<div class="empty-state"><span class="icon">🌸</span>No expenses logged for this date yet!</div>`;return}
+  const mk=date.slice(0,7);
+  const ft=fixedTotal(mk);
+  const daysInMonth=new Date(parseInt(date.slice(0,4)),parseInt(date.slice(5,7)),0).getDate();
+  const dailyFixed=ft/daysInMonth;
+  const grandDay=entry.daily+dailyFixed;
+  const last7=getLast7(date);
+  el.innerHTML=`
+    <div class="grand-banner">
+      <div><div class="g-label">🌟 Grand Total (day + fixed share)</div><div style="font-size:0.75rem;color:var(--muted);font-weight:600;margin-top:2px">Daily: ${fmt(entry.daily)} + Fixed share: ${fmt(dailyFixed)}</div></div>
+      <div class="g-amt">${fmt(grandDay)}</div>
+    </div>
+    <div class="summary-grid">
+      <div class="sc s-total"><span class="amt">${fmt(entry.daily)}</span><span class="lbl">Daily Total</span></div>
+      <div class="sc s-groc"><span class="amt">${fmt(entry.groc)}</span><span class="lbl">🥦 Groceries</span></div>
+      <div class="sc s-snack"><span class="amt">${fmt(entry.snack)}</span><span class="lbl">🍕 Snacks</span></div>
+      <div class="sc s-shop"><span class="amt">${fmt(entry.shop)}</span><span class="lbl">🛍 Shopping</span></div>
+      <div class="sc s-rep"><span class="amt">${fmt(entry.rep)}</span><span class="lbl">⛽ Repairs</span></div>
+    </div>
+    ${entry.note?`<div class="card" style="padding:10px 16px;background:var(--yellow)"><span style="font-size:0.78rem;font-weight:800;color:var(--yellow-dark)">📌 Note: </span><span style="font-size:0.85rem;font-weight:600;color:#5A4800">${entry.note}</span></div>`:''}
+    <div class="chart-row">
+      <div class="chart-box"><h3>📈 7-day trend</h3><div style="position:relative;height:180px"><canvas id="d-line" role="img" aria-label="7 day trend">7 day spending</canvas></div></div>
+      <div class="chart-box"><h3>🍩 distribution</h3><div style="position:relative;height:180px"><canvas id="d-donut" role="img" aria-label="Category breakdown">Distribution</canvas></div></div>
+    </div>
+    <div class="card"><div class="card-title">🗑 delete this entry</div><button class="btn-save btn-del-red" onclick="deleteEntry('${date}')">🗑 Delete ${date}</button></div>
+  `;
+  setTimeout(()=>{
+    charts.dLine=new Chart(document.getElementById('d-line'),{
+      type:'line',
+      data:{labels:last7.map(e=>e.date.slice(5)),datasets:[{label:'Daily',data:last7.map(e=>e.daily),borderColor:'#C9B8FF',backgroundColor:'rgba(201,184,255,0.15)',tension:0.4,pointBackgroundColor:'#7C5CBF',pointRadius:4,fill:true}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10},color:'#9B85A8'}},y:{ticks:{font:{size:10},color:'#9B85A8'},beginAtZero:true}}}
+    });
+    const dvals=CAT_KEYS.map(k=>entry[k]);
+    if(dvals.some(v=>v>0)){
+      charts.dDonut=new Chart(document.getElementById('d-donut'),{
+        type:'doughnut',
+        data:{labels:CAT_KEYS.map(k=>CAT_NAMES[k]),datasets:[{data:dvals,backgroundColor:['#A8E6CF','#FFB7D5','#C9B8FF','#FFD4B2'],borderWidth:0}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:9},padding:6,boxWidth:10}}}}
+      });
+    }
+  },100);
+}
+
+function renderWeeklyView(){
+  const el=document.getElementById('weekly-view-content');
+  Object.values(charts).forEach(c=>{try{c.destroy()}catch(e){}});charts={};
+  if(!entries.length){el.innerHTML=`<div class="card"><div class="empty-state"><span class="icon">📊</span>No data yet!</div></div>`;return}
+  const weeks={};
+  entries.forEach(e=>{
+    const d=new Date(e.date);const day=d.getDay();
+    const diff=d.getDate()-day+(day===0?-6:1);
+    const mon=new Date(d);mon.setDate(diff);
+    const wk=mon.toISOString().split('T')[0];
+    if(!weeks[wk])weeks[wk]=[];weeks[wk].push(e);
+  });
+  const wkKeys=Object.keys(weeks).sort().reverse().slice(0,4);
+  // weekly totals = daily only (no proportional fixed in the line graph)
+  const wTotals=wkKeys.map(wk=>weeks[wk].reduce((s,e)=>s+e.daily,0));
+  // grand = daily + full fixed for each unique month in the week
+  const wGrands=wkKeys.map((wk,i)=>{
+    const wEntries=weeks[wk];
+    const mks=[...new Set(wEntries.map(e=>e.date.slice(0,7)))];
+    let fixedShare=0;
+    mks.forEach(mk=>{
+      const ft=fixedTotal(mk);
+      const daysInMonth=new Date(parseInt(mk.slice(0,4)),parseInt(mk.slice(5,7)),0).getDate();
+      const daysInWeekFromMonth=wEntries.filter(e=>e.date.slice(0,7)===mk).length;
+      fixedShare+=ft/daysInMonth*daysInWeekFromMonth;
+    });
+    return wTotals[i]+fixedShare;
+  });
+
+  el.innerHTML=`
+    <div class="grand-banner">
+      <div><div class="g-label">🌟 latest week grand total</div><div style="font-size:0.75rem;color:var(--muted);font-weight:600;margin-top:2px">Daily: ${fmt(wTotals[0]||0)} + Fixed share: ${fmt((wGrands[0]||0)-(wTotals[0]||0))}</div></div>
+      <div class="g-amt">${fmt(wGrands[0]||0)}</div>
+    </div>
+    <div class="summary-grid">
+      ${wkKeys.map((wk,i)=>`<div class="sc s-${['total','groc','snack','shop'][i%4]}"><span class="amt">${fmt(wTotals[i])}</span><span class="lbl">w/o ${wk.slice(5)}</span></div>`).join('')}
+    </div>
+    <div class="chart-row">
+      <div class="chart-box"><h3>📈 weekly daily totals</h3><div style="position:relative;height:180px"><canvas id="w-line" role="img" aria-label="Weekly daily spending trend">Weekly totals</canvas></div></div>
+      <div class="chart-box"><h3>🍩 avg distribution</h3><div style="position:relative;height:180px"><canvas id="w-donut" role="img" aria-label="Category distribution">Distribution</canvas></div></div>
+    </div>
+    ${wkKeys.map((wk,i)=>{
+      const wEntries=weeks[wk];
+      const wDailyTotal=wTotals[i];
+      const wGrand=wGrands[i];
+      return`<div class="card">
+        <span class="week-label">Week of ${wk}</span>
+        <div class="grand-banner" style="margin:8px 0;padding:10px 14px">
+          <div><div class="g-label">Grand Total</div><div style="font-size:0.72rem;color:var(--muted);font-weight:600">Daily: ${fmt(wDailyTotal)} + Fixed share: ${fmt(wGrand-wDailyTotal)}</div></div>
+          <div class="g-amt" style="font-size:1.3rem">${fmt(wGrand)}</div>
+        </div>
+        <table class="log-table">
+          <thead><tr><th>Date</th><th>Groc</th><th>Snacks</th><th>Shop</th><th>Repairs</th><th>Daily</th></tr></thead>
+          <tbody>
+            ${wEntries.map(e=>`<tr><td style="font-weight:700;font-size:0.8rem">${e.date.slice(5)}</td><td>${e.groc?fmt(e.groc):'-'}</td><td>${e.snack?fmt(e.snack):'-'}</td><td>${e.shop?fmt(e.shop):'-'}</td><td>${e.rep?fmt(e.rep):'-'}</td><td style="font-weight:800;color:var(--lav-dark)">${fmt(e.daily)}</td></tr>`).join('')}
+            <tr class="total-row"><td colspan="5" style="text-align:right">Weekly Daily Total</td><td>${fmt(wDailyTotal)}</td></tr>
+          </tbody>
+        </table>
+      </div>`;
+    }).join('')}
+  `;
+  setTimeout(()=>{
+    // Line graph: daily totals only, no grand/fixed line
+    charts.wLine=new Chart(document.getElementById('w-line'),{
+      type:'line',
+      data:{
+        labels:[...wkKeys].reverse().map(w=>w.slice(5)),
+        datasets:[{
+          label:'Daily Total',
+          data:[...wTotals].reverse(),
+          borderColor:'#C9B8FF',
+          backgroundColor:'rgba(201,184,255,0.15)',
+          tension:0.4,
+          pointBackgroundColor:'#7C5CBF',
+          pointRadius:5,
+          fill:true
+        }]
+      },
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10},color:'#9B85A8'}},y:{ticks:{font:{size:10},color:'#9B85A8'},beginAtZero:true}}}
+    });
+    const allE=Object.values(weeks).flat();
+    const avgCats=CAT_KEYS.map(k=>allE.reduce((s,e)=>s+(e[k]||0),0)/wkKeys.length);
+    if(avgCats.some(v=>v>0)){
+      charts.wDonut=new Chart(document.getElementById('w-donut'),{
+        type:'doughnut',
+        data:{labels:CAT_KEYS.map(k=>CAT_NAMES[k]),datasets:[{data:avgCats,backgroundColor:['#A8E6CF','#FFB7D5','#C9B8FF','#FFD4B2'],borderWidth:0}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:9},padding:6,boxWidth:10}}}}
+      });
+    }
+  },100);
+}
+
+function renderMonthlyView(){
+  const el=document.getElementById('monthly-view-content');
+  Object.values(charts).forEach(c=>{try{c.destroy()}catch(e){}});charts={};
+  const months={};
+  entries.forEach(e=>{const mk=e.date.slice(0,7);if(!months[mk])months[mk]=[];months[mk].push(e)});
+  const mKeys=Object.keys(months).sort().reverse().slice(0,6);
+  if(!mKeys.length){el.innerHTML=`<div class="card"><div class="empty-state"><span class="icon">🌙</span>No monthly data yet!</div></div>`;return}
+  const mDailyTotals=mKeys.map(mk=>months[mk].reduce((s,e)=>s+e.daily,0));
+  const mFixed=mKeys.map(mk=>fixedTotal(mk));
+  const mGrands=mKeys.map((mk,i)=>mDailyTotals[i]+mFixed[i]);
+  el.innerHTML=`
+    <div class="grand-banner">
+      <div><div class="g-label">🌟 latest month grand total</div><div style="font-size:0.75rem;color:var(--muted);font-weight:600;margin-top:2px">Daily: ${fmt(mDailyTotals[0]||0)} + Fixed: ${fmt(mFixed[0]||0)}</div></div>
+      <div class="g-amt">${fmt(mGrands[0]||0)}</div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-box"><h3>📈 monthly trend</h3><div style="position:relative;height:200px"><canvas id="m-line" role="img" aria-label="Monthly trend">Monthly totals</canvas></div></div>
+      <div class="chart-box"><h3>🍩 latest month</h3><div style="position:relative;height:200px"><canvas id="m-donut" role="img" aria-label="Category distribution">Distribution</canvas></div></div>
+    </div>
+    ${mKeys.map((mk,i)=>{
+      const mes=months[mk];
+      const cats={groc:0,snack:0,shop:0,rep:0};
+      mes.forEach(e=>CAT_KEYS.forEach(k=>{cats[k]+=e[k]||0}));
+      const f=getFixed(mk);
+      const ft=mFixed[i];
+      const grand=mGrands[i];
+      return`<div class="card">
+        <div class="card-title">${mk}</div>
+        <div class="grand-banner" style="margin-bottom:1rem;padding:10px 14px">
+          <div><div class="g-label">Grand Total</div><div style="font-size:0.72rem;color:var(--muted);font-weight:600">Daily: ${fmt(mDailyTotals[i])} + Fixed: ${fmt(ft)}</div></div>
+          <div class="g-amt" style="font-size:1.4rem">${fmt(grand)}</div>
+        </div>
+        <div class="summary-grid">
+          <div class="sc s-total"><span class="amt">${fmt(mDailyTotals[i])}</span><span class="lbl">Daily Total</span></div>
+          <div class="sc s-fixed"><span class="amt">${fmt(ft)}</span><span class="lbl">Fixed Total</span></div>
+        </div>
+        <table class="log-table">
+          <thead><tr><th>Category</th><th>Amount</th></tr></thead>
+          <tbody>
+            ${CAT_KEYS.map(k=>`<tr><td><span class="badge ${CAT_BADGE[k]}">${CAT_NAMES[k]}</span></td><td style="font-weight:700">${fmt(cats[k])}</td></tr>`).join('')}
+            <tr><td colspan="2"><div class="divider"></div></td></tr>
+            ${M_KEYS.map(k=>`<tr><td><span class="badge b-fixed">${M_NAMES[k]}</span></td><td style="font-weight:700">${fmt(f[k]||0)}</td></tr>`).join('')}
+            <tr class="total-row"><td>Grand Total</td><td>${fmt(grand)}</td></tr>
+          </tbody>
+        </table>
+      </div>`;
+    }).join('')}
+  `;
+  setTimeout(()=>{
+    charts.mLine=new Chart(document.getElementById('m-line'),{
+      type:'line',
+      data:{labels:[...mKeys].reverse(),datasets:[
+        {label:'Daily',data:[...mDailyTotals].reverse(),borderColor:'#C9B8FF',backgroundColor:'rgba(201,184,255,0.12)',tension:0.4,pointBackgroundColor:'#7C5CBF',pointRadius:4,fill:true},
+        {label:'Grand',data:[...mGrands].reverse(),borderColor:'#FFB7D5',backgroundColor:'rgba(255,183,213,0.08)',tension:0.4,pointBackgroundColor:'#E8699A',pointRadius:4,fill:false,borderDash:[4,3]}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:10}}},scales:{x:{ticks:{font:{size:10},color:'#9B85A8'}},y:{ticks:{font:{size:10},color:'#9B85A8'},beginAtZero:true}}}
+    });
+    const curMes=months[mKeys[0]]||[];
+    const cats={groc:0,snack:0,shop:0,rep:0};
+    curMes.forEach(e=>CAT_KEYS.forEach(k=>{cats[k]+=e[k]||0}));
+    const f=getFixed(mKeys[0]);
+    const donutData=[...CAT_KEYS.map(k=>cats[k]),...M_KEYS.map(k=>f[k]||0)];
+    if(donutData.some(v=>v>0)){
+      charts.mDonut=new Chart(document.getElementById('m-donut'),{
+        type:'doughnut',
+        data:{labels:[...CAT_KEYS.map(k=>CAT_NAMES[k]),...M_KEYS.map(k=>M_NAMES[k])],datasets:[{data:donutData,backgroundColor:['#A8E6CF','#FFB7D5','#C9B8FF','#FFD4B2','#FFF2A8','#D4F0FF','#FFE4CC','#E8D5FF'],borderWidth:0}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:8},padding:4,boxWidth:8}}}}
+      });
+    }
+  },100);
+}
+</script>
+</body>
+</html>
