@@ -194,9 +194,19 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
   </div>
 
   <!-- MONTHLY VIEW -->
-  <div class="page" id="page-mview">
-    <div id="monthly-view-content"></div>
+<div class="page" id="page-mview">
+
+  <div class="card">
+      <div class="card-title">📅 Select Month</div>
+
+      <div class="month-selector">
+          <select id="mv-month"></select>
+      </div>
   </div>
+
+  <div id="monthly-view-content"></div>
+
+</div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -332,7 +342,10 @@ function switchPage(id,btn){
   Object.values(charts).forEach(c=>{try{c.destroy()}catch(e){}});charts={};
   if(id==='dview')renderDailyView();
   if(id==='wview')renderWeeklyView();
-  if(id==='mview')renderMonthlyView();
+  if(id==='mview'){
+    populateMonthlySelector();
+    renderMonthlyView();
+}
 }
 
 function showToast(msg){
@@ -395,6 +408,7 @@ function renderDailyView(){
   },100);
 }
 
+    
 function renderWeeklyView(){
   const el=document.getElementById('weekly-view-content');
   Object.values(charts).forEach(c=>{try{c.destroy()}catch(e){}});charts={};
@@ -487,12 +501,45 @@ function renderWeeklyView(){
   },100);
 }
 
+function populateMonthlySelector(){
+
+    const sel=document.getElementById('mv-month');
+
+    if(!sel) return;
+
+    const months={};
+
+    entries.forEach(e=>{
+        months[e.date.slice(0,7)] = true;
+    });
+
+    const keys=Object.keys(months)
+        .sort()
+        .reverse();
+
+    sel.innerHTML='';
+
+    keys.forEach(mk=>{
+
+        const op=document.createElement('option');
+
+        op.value=mk;
+        op.textContent=mk;
+
+        sel.appendChild(op);
+
+    });
+
+    sel.onchange=renderMonthlyView;
+}    
 function renderMonthlyView(){
   const el=document.getElementById('monthly-view-content');
   Object.values(charts).forEach(c=>{try{c.destroy()}catch(e){}});charts={};
   const months={};
   entries.forEach(e=>{const mk=e.date.slice(0,7);if(!months[mk])months[mk]=[];months[mk].push(e)});
-  const mKeys=Object.keys(months).sort().reverse().slice(0,6);
+  const mKeys=Object.keys(months)
+    .sort()
+    .reverse();
   if(!mKeys.length){el.innerHTML=`<div class="card"><div class="empty-state"><span class="icon">🌙</span>No monthly data yet!</div></div>`;return}
   const mDailyTotals=mKeys.map(mk=>months[mk].reduce((s,e)=>s+e.daily,0));
   const mFixed=mKeys.map(mk=>fixedTotal(mk));
@@ -544,10 +591,13 @@ function renderMonthlyView(){
       ]},
       options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:10}}},scales:{x:{ticks:{font:{size:10},color:'#9B85A8'}},y:{ticks:{font:{size:10},color:'#9B85A8'},beginAtZero:true}}}
     });
-    const curMes=months[mKeys[0]]||[];
+    const selectedMonth =
+    document.getElementById('mv-month')?.value || mKeys[0];
+
+const curMes = months[selectedMonth] || [];
     const cats={groc:0,snack:0,shop:0,rep:0};
     curMes.forEach(e=>CAT_KEYS.forEach(k=>{cats[k]+=e[k]||0}));
-    const f=getFixed(mKeys[0]);
+    const f=getFixed(selectedMonth);
     const donutData=[...CAT_KEYS.map(k=>cats[k]),...M_KEYS.map(k=>f[k]||0)];
     if(donutData.some(v=>v>0)){
       charts.mDonut=new Chart(document.getElementById('m-donut'),{
